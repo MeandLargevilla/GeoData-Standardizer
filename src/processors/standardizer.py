@@ -195,6 +195,24 @@ class Standardizer:
         if include_metadata and data.get('metadata'):
             metadata_path = output_path.parent / f"{output_path.stem}_metadata.json"
             import json
+            import numpy as np
+            
+            # Convert numpy types to native Python types for JSON serialization
+            def convert_numpy_types(obj):
+                if isinstance(obj, np.integer):
+                    return int(obj)
+                elif isinstance(obj, np.floating):
+                    return float(obj)
+                elif isinstance(obj, np.ndarray):
+                    return obj.tolist()
+                elif isinstance(obj, dict):
+                    return {k: convert_numpy_types(v) for k, v in obj.items()}
+                elif isinstance(obj, (list, tuple)):
+                    return [convert_numpy_types(item) for item in obj]
+                return obj
+            
+            metadata_json = convert_numpy_types(data['metadata'])
+            
             with open(metadata_path, 'w') as f:
-                json.dump(data['metadata'], f, indent=2)
+                json.dump(metadata_json, f, indent=2)
             self.logger.info(f"Wrote metadata to {metadata_path}")
